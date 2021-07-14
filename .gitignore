@@ -1,0 +1,9 @@
+##Node related files
+node_modules
+package-lock.json
+
+##Local config files
+config.js
+
+##Log files
+logs
