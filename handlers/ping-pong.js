@@ -1,4 +1,3 @@
-const { prefix } = require('../config');
 const { LOGGER } = require('../logger');
 
 const pingPongHandler = async (message) => {

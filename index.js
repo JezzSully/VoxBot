@@ -4,6 +4,7 @@ const { LOGGER } = require('./logger');
 
 const Discord = require('discord.js');
 const { pingPongHandler } = require('./handlers/ping-pong');
+const { raidHandler } = require('./handlers/raid');
 
 
 const VoxBot = new Discord.Client();
@@ -11,6 +12,10 @@ const VoxBot = new Discord.Client();
 const main = async () => {
     VoxBot.on('ready', () => {
         LOGGER.info(`Logged in as ${VoxBot.user.tag}`);
+    });
+
+    VoxBot.on('unhandledRejection', (error) => {
+        LOGGER.error(error);
     });
 
     VoxBot.on('message', (message) => {
@@ -26,7 +31,10 @@ const main = async () => {
             return;
         }
         
+        //Sort by channels(?)
         pingPongHandler(message);
+
+        raidHandler(message);
     });
 
     try {
