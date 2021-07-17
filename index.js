@@ -1,4 +1,4 @@
-const { bot_token, prefix } = require('./config');
+const { bot_token, prefix, channelList } = require('./config');
 
 const { LOGGER } = require('./logger');
 
@@ -20,7 +20,6 @@ const main = async () => {
 
     VoxBot.on('message', (message) => {
 
-        console.log(message.author);
         //ignore bot messsages 
         if(message.author.bot) {
             return;
@@ -30,6 +29,15 @@ const main = async () => {
         if (!message.content.startsWith(prefix)) {
             return;
         }
+
+        switch(message.channel.id) {
+            case channelList.devChannel:
+                //
+                //break;
+            default:
+                break;
+        }
+
         
         //Sort by channels(?)
         pingPongHandler(message);
