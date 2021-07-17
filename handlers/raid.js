@@ -1,3 +1,4 @@
+const Discord = require('discord.js');
 const { prefix, channelList } = require('../config');
 const { LOGGER } = require('../logger');
 
@@ -33,7 +34,6 @@ const raidCreate = async (message, args) => {
     await message.guild.channels.create(`PF: ${args[1]}`, { reason: 'PF' }).then((channel) => {
         channel.setParent(channelList.partyFinderCategory);
         textChannel = channel;
-        console.log(textChannel);
     });
 
     //Create voice channel
@@ -51,30 +51,56 @@ const raidCreate = async (message, args) => {
         return;
     }
 
+    //Do fancy message
+    let thisMessage;
+    const embedMessage = new Discord.MessageEmbed()
+        .setTitle(`PartyFinder: ${args[1]}`)
+        .setDescription('')
+        .addFields(
+            { name: 'Tanks', value: 'Empty'},
+            { name: 'Healers', value: 'Empty'},
+            { name: 'DPS', value: 'empty'}
+        )
+        .setFooter('I made dis');
+
+    await message.channel.send(embedMessage).then((x) => {
+        //x.react(); //tankLogo
+        //x.react(); //healLogo
+        //x.react(); //DPSLogo
+        console.log(x);
+        thisMessage = x;
+    });
+
     raidListStore.push({
         name: args[1],
         leader: message.author.id,
         textChannel,
-        voiceChannel
+        voiceChannel,
+        message: thisMessage,
+        members: []
     });
 
     //Do an @ message
+    textChannel.send(`${message.author}`);
+    message.channel.send('Group Created').then((x) => {
+        // x.react(`\:smile:`);
+    });
+    message.react('👍'); //having emojiis in code is cursed
 };
 
 const raidDisband = async (message) => {
-    console.log(message.author.id)
+    LOGGER.info('Raid Delete Request');
     const group = await getIndexForAuthor(message);
-    console.log('group >>' + group);
     if (group) {
-        LOGGER.info('Raid Delete Request');
         group.textChannel.delete();
         group.voiceChannel.delete();
+        group.message.delete();
         const index = raidListStore.indexOf(group);
         raidListStore.splice(index, 1);
         message.channel.send('Raid Group disbanded');
         message.delete();
     } else {
-        console.log('No raids owned by author');
+        LOGGER.info({ message: 'No raids owned by author', author: message.author.id });
         message.channel.send('No raids owned by this author.');
     }
 }
@@ -85,7 +111,7 @@ const raidList = (message) => {
     message.delete();
 };
 
-const raidHandler = (message) => {
+const raidMessageHandler = (message) => {
     const args = message.content.slice(prefix.length).trim().split(' ');
     const command = args[0];
 
@@ -100,6 +126,34 @@ const raidHandler = (message) => {
     }
 };
 
+const raidReactionHandler = (reaction, user) => {
+    //may not need this?
+    if(!reaction.message.author.bot) {
+        return;
+    }
+
+    //if message is one of raid messages
+    let group;
+    raidListStore.forEach((entry) => {
+        if(entry.message.id === reaction.message.id) {
+            group = entry;
+        }
+    });
+
+    if(!group) {
+        return;
+    }
+
+    group.members.push(user);
+
+    //edit message;
+    const oldEmbed = reaction.message.embeds[0];
+    const newEmbed = new Discord.MessageEmbed(oldEmbed).setFooter('new footer');
+
+    reaction.message.edit(newEmbed);
+}
+
 module.exports = {
-    raidHandler
+    raidMessageHandler,
+    raidReactionHandler
 };

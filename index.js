@@ -4,10 +4,10 @@ const { LOGGER } = require('./logger');
 
 const Discord = require('discord.js');
 const { pingPongHandler } = require('./handlers/ping-pong');
-const { raidHandler } = require('./handlers/raid');
+const { raidMessageHandler, raidReactionHandler } = require('./handlers/raid');
 
 
-const VoxBot = new Discord.Client();
+const VoxBot = new Discord.Client({ partials: ['MESSAGE', 'CHANNEL', 'REACTION']});
 
 const main = async () => {
     VoxBot.on('ready', () => {
@@ -32,8 +32,8 @@ const main = async () => {
 
         switch(message.channel.id) {
             case channelList.devChannel:
-                //
-                //break;
+                //Put specific handlers here
+                break;
             default:
                 break;
         }
@@ -42,7 +42,25 @@ const main = async () => {
         //Sort by channels(?)
         pingPongHandler(message);
 
-        raidHandler(message);
+        raidMessageHandler(message);
+    });
+
+    VoxBot.on('messageReactionAdd', async (reaction, user) => {
+        if(reaction.partial) {
+            try {
+                await reaction.fetch();
+            } catch (err) {
+                LOGGER.error('Fetching failed.');
+                return;
+            }
+        }
+        switch(reaction.message.channel.id) {
+            case channelList.devChannel:
+                raidReactionHandler(reaction,user);
+                break;
+            default:
+                break;
+        }
     });
 
     try {
