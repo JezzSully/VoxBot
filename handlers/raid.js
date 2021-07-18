@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const { prefix, channelList } = require('../config');
+const { prefix, channelList, emojis } = require('../config');
 const { LOGGER } = require('../logger');
 
 const raidListStore = [];
@@ -57,17 +57,16 @@ const raidCreate = async (message, args) => {
         .setTitle(`PartyFinder: ${args[1]}`)
         .setDescription('')
         .addFields(
-            { name: 'Tanks', value: 'Empty'},
-            { name: 'Healers', value: 'Empty'},
-            { name: 'DPS', value: 'empty'}
+            { name: 'Tanks', value: 'Empty' },
+            { name: 'Healers', value: 'Empty' },
+            { name: 'DPS', value: 'Empty' }
         )
         .setFooter('I made dis');
 
     await message.channel.send(embedMessage).then((x) => {
-        //x.react(); //tankLogo
-        //x.react(); //healLogo
-        //x.react(); //DPSLogo
-        console.log(x);
+        x.react(emojis.tank)
+        x.react(emojis.healer)
+        x.react(emojis.dps)
         thisMessage = x;
     });
 
@@ -77,15 +76,17 @@ const raidCreate = async (message, args) => {
         textChannel,
         voiceChannel,
         message: thisMessage,
-        members: []
+        members: {
+            tanks: [],
+            healers: [],
+            dps: []
+        }
     });
 
     //Do an @ message
-    textChannel.send(`${message.author}`);
-    message.channel.send('Group Created').then((x) => {
-        // x.react(`\:smile:`);
-    });
-    message.react('👍'); //having emojiis in code is cursed
+    textChannel.send(`${message.author}, This group has been created for your PF.
+    Once finished, please disband the group in the main channel using \`!disband\`.
+    Thank you for using VoxBot <3`);
 };
 
 const raidDisband = async (message) => {
@@ -126,29 +127,65 @@ const raidMessageHandler = (message) => {
     }
 };
 
+const fillRaidRoleFields = (embed, fieldName, users) => {
+    let value = '';
+    if (users.length < 1) {
+        value = 'Empty';
+    } else {
+        users.forEach((user) => {
+            value = value.concat(`${user} `);
+        });
+    }
+
+    embed.addFields({ name: fieldName, value });
+
+    return embed;
+}
+
 const raidReactionHandler = (reaction, user) => {
     //may not need this?
-    if(!reaction.message.author.bot) {
+    if (!reaction.message.author.bot) {
+        return;
+    }
+
+    if (user.bot) {
         return;
     }
 
     //if message is one of raid messages
     let group;
     raidListStore.forEach((entry) => {
-        if(entry.message.id === reaction.message.id) {
+        if (entry.message.id === reaction.message.id) {
             group = entry;
         }
     });
 
-    if(!group) {
+    if (!group) {
         return;
     }
 
-    group.members.push(user);
+    // console.log(reaction.emoji);
+    switch (reaction.emoji.id) {
+        case emojis.tank:
+            group.members.tanks.push(user);
+            break;
+        case emojis.healer:
+            group.members.healers.push(user);
+            break;
+        case emojis.dps:
+            group.members.dps.push(user);
+            break;
+        default:
+            break;
+    }
 
     //edit message;
     const oldEmbed = reaction.message.embeds[0];
-    const newEmbed = new Discord.MessageEmbed(oldEmbed).setFooter('new footer');
+    oldEmbed.fields = []; //reset the fields
+    let newEmbed = new Discord.MessageEmbed(oldEmbed).setFooter('new footer');
+    newEmbed = fillRaidRoleFields(newEmbed, 'Tanks', group.members.tanks);
+    newEmbed = fillRaidRoleFields(newEmbed, 'Healers', group.members.healers);
+    newEmbed = fillRaidRoleFields(newEmbed, 'DPS', group.members.dps);
 
     reaction.message.edit(newEmbed);
 }
