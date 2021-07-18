@@ -45,6 +45,25 @@ const main = async () => {
         raidMessageHandler(message);
     });
 
+    VoxBot.on('messageReactionRemove', async (reaction, user) => {
+        if(reaction.partial) {
+            try {
+                await reaction.fetch();
+            }catch (err) {
+                LOGGER.error('Fetching failed.');
+                return;
+            }
+        }
+
+        switch(reaction.message.channel.id) {
+            case channelList.devChannel:
+                raidReactionHandler(reaction,user, false);
+                break;
+            default:
+                break;
+        }
+    });
+
     VoxBot.on('messageReactionAdd', async (reaction, user) => {
         if(reaction.partial) {
             try {
@@ -56,7 +75,7 @@ const main = async () => {
         }
         switch(reaction.message.channel.id) {
             case channelList.devChannel:
-                raidReactionHandler(reaction,user);
+                raidReactionHandler(reaction,user, true);
                 break;
             default:
                 break;

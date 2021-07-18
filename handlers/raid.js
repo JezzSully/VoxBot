@@ -142,7 +142,7 @@ const fillRaidRoleFields = (embed, fieldName, users) => {
     return embed;
 }
 
-const raidReactionHandler = (reaction, user) => {
+const raidReactionHandler = (reaction, user, add) => {
     //may not need this?
     if (!reaction.message.author.bot) {
         return;
@@ -164,21 +164,41 @@ const raidReactionHandler = (reaction, user) => {
         return;
     }
 
-    // console.log(reaction.emoji);
-    switch (reaction.emoji.id) {
-        case emojis.tank:
-            group.members.tanks.push(user);
-            break;
-        case emojis.healer:
-            group.members.healers.push(user);
-            break;
-        case emojis.dps:
-            group.members.dps.push(user);
-            break;
-        default:
-            break;
-    }
+    let i;
 
+    if (!add) {
+        switch (reaction.emoji.id) {
+            case emojis.tank:
+                i = group.members.tanks.indexOf(user);
+                group.members.tanks.splice(i, 1);
+                break;
+            case emojis.healer:
+                i = group.members.healers.indexOf(user);
+                group.members.healers.splice(i, 1);
+                break;
+            case emojis.dps:
+                i = group.members.dps.indexOf(user);
+                group.members.dps.splice(i, 1);
+                break;
+            default:
+                break;
+        }
+    } else {
+        switch (reaction.emoji.id) {
+            case emojis.tank:
+                group.members.tanks.push(user);
+                break;
+            case emojis.healer:
+                group.members.healers.push(user);
+                break;
+            case emojis.dps:
+                group.members.dps.push(user);
+                break;
+            default:
+                break;
+        }
+    }
+    
     //edit message;
     const oldEmbed = reaction.message.embeds[0];
     oldEmbed.fields = []; //reset the fields
